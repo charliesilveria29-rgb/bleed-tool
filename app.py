@@ -16,7 +16,7 @@ st.title("Any Budget PDF Bleed Tool")
 
 st.write("""
 1. **Upload** a file (PDF, PNG, or JPG).
-2. The tool **generates bleeds** by extending the edge pixels (Pixel Stretch).
+2. The tool **automatically creates** perfect bleeds.
 3. **Download** your new print-ready PDF.
 """)
 
@@ -131,7 +131,7 @@ if uploaded_file is not None:
             append_images=final_pdf_images[1:]
         )
     
-    st.success("Success! Pixel-Stretched Bleeds added.")
+    st.success("Success! Download PDF with Bleeds.")
     
     st.download_button(
         label="Download Print-Ready PDF",
@@ -139,3 +139,4 @@ if uploaded_file is not None:
         file_name=f"BLEED_STRETCH_{uploaded_file.name.rsplit('.', 1)[0]}.pdf",
         mime="application/pdf"
     )
+
