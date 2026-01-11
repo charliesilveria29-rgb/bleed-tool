@@ -47,7 +47,7 @@ if uploaded_file is not None:
         # It's already a PDF, just load it
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
 
-    # 2. BLEED GENERATION LOGIC (UPDATED: The "New Page" Method)
+    # 2. BLEED GENERATION LOGIC
     # Define bleed size: 0.125 inches = 9 points
     BLEED_PTS = 9 
     
@@ -66,7 +66,8 @@ if uploaded_file is not None:
         new_page = new_doc.new_page(width=new_width, height=new_height)
         
         # Draw the original page onto the new page, STRETCHING it to fill the new box
-        new_page.show_pdf_page(new_page.rect, doc, page.number)
+        # keep_proportion=False is the magic key to eliminate white strips!
+        new_page.show_pdf_page(new_page.rect, doc, page.number, keep_proportion=False)
 
     # 3. SAVE & DOWNLOAD
     output_buffer = io.BytesIO()
