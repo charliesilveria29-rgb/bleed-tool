@@ -7,7 +7,6 @@ import io
 st.set_page_config(page_title="Any Budget Bleed Tool", layout="centered")
 
 # --- APP INTERFACE ---
-# Make sure "Any Budget Logo.png" is uploaded to your GitHub folder!
 try:
     st.image("Any Budget Logo.png", width=300)
 except:
@@ -48,30 +47,31 @@ if uploaded_file is not None:
         # It's already a PDF, just load it
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
 
-    # 2. BLEED GENERATION LOGIC
-    # Define bleed size: 0.125 inches = 9 points (Standard Print Bleed)
+    # 2. BLEED GENERATION LOGIC (UPDATED: The "New Page" Method)
+    # Define bleed size: 0.125 inches = 9 points
     BLEED_PTS = 9 
     
+    # Create a new empty PDF to hold the final stretched pages
+    new_doc = fitz.open()
+    
     for page in doc:
-        # Get current size
+        # Get original size
         rect = page.rect
         
-        # Calculate scale factor to stretch content to fill the new bleed area
-        # (New Size / Old Size)
-        scale_x = (rect.width + 2 * BLEED_PTS) / rect.width
-        scale_y = (rect.height + 2 * BLEED_PTS) / rect.height
+        # Calculate new size (Original + Bleed on all sides)
+        new_width = rect.width + (2 * BLEED_PTS)
+        new_height = rect.height + (2 * BLEED_PTS)
         
-        # Apply the scaling matrix to the page content
-        mat = fitz.Matrix(scale_x, scale_y)
-        page.set_transformation_matrix(mat)
+        # Create a new page in the new document with the larger size
+        new_page = new_doc.new_page(width=new_width, height=new_height)
         
-        # Update the page's visible box (MediaBox) to match the new scaled size
-        page.set_mediabox(fitz.Rect(0, 0, rect.width * scale_x, rect.height * scale_y))
+        # Draw the original page onto the new page, STRETCHING it to fill the new box
+        new_page.show_pdf_page(new_page.rect, doc, page.number)
 
     # 3. SAVE & DOWNLOAD
     output_buffer = io.BytesIO()
-    doc.save(output_buffer)
-    doc.close()
+    new_doc.save(output_buffer)
+    new_doc.close()
     
     st.success("Success! Bleeds added.")
     
