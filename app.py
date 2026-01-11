@@ -16,70 +16,126 @@ st.title("Any Budget PDF Bleed Tool")
 
 st.write("""
 1. **Upload** a file (PDF, PNG, or JPG).
-2. The tool **automatically converts & adds bleeds** by stretching the content.
+2. The tool **generates bleeds** by extending the edge pixels (Pixel Stretch).
 3. **Download** your new print-ready PDF.
 """)
 
-# --- FILE UPLOADER (Accepts PDF & Images) ---
+def add_pixel_stretch_bleed(image, bleed_px):
+    """
+    Takes a PIL image and adds a 'smeared' pixel bleed to all sides.
+    This preserves the center quality perfectly.
+    """
+    w, h = image.size
+    new_w = w + 2 * bleed_px
+    new_h = h + 2 * bleed_px
+    
+    # Create new canvas
+    new_img = Image.new("RGB", (new_w, new_h))
+    
+    # Paste original in the center
+    new_img.paste(image, (bleed_px, bleed_px))
+    
+    # --- 1. STRETCH TOP EDGE ---
+    # Crop the top 1px row
+    top_row = image.crop((0, 0, w, 1))
+    # Resize it to fill the top bleed area
+    top_fill = top_row.resize((w, bleed_px), resample=Image.NEAREST)
+    new_img.paste(top_fill, (bleed_px, 0))
+    
+    # --- 2. STRETCH BOTTOM EDGE ---
+    # Crop the bottom 1px row
+    bottom_row = image.crop((0, h-1, w, h))
+    # Resize it to fill the bottom bleed area
+    bottom_fill = bottom_row.resize((w, bleed_px), resample=Image.NEAREST)
+    new_img.paste(bottom_fill, (bleed_px, h + bleed_px))
+    
+    # --- 3. STRETCH LEFT EDGE ---
+    # Crop the left 1px column
+    left_col = image.crop((0, 0, 1, h))
+    # Resize it to fill the left bleed area
+    left_fill = left_col.resize((bleed_px, h), resample=Image.NEAREST)
+    new_img.paste(left_fill, (0, bleed_px))
+    
+    # --- 4. STRETCH RIGHT EDGE ---
+    # Crop the right 1px column
+    right_col = image.crop((w-1, 0, w, h))
+    # Resize it to fill the right bleed area
+    right_fill = right_col.resize((bleed_px, h), resample=Image.NEAREST)
+    new_img.paste(right_fill, (w + bleed_px, bleed_px))
+    
+    # --- 5. FILL CORNERS ---
+    # We take the corner pixels and stretch them into the empty corner blocks
+    
+    # Top-Left
+    tl_pixel = image.crop((0, 0, 1, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(tl_pixel, (0, 0))
+    
+    # Top-Right
+    tr_pixel = image.crop((w-1, 0, w, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(tr_pixel, (w + bleed_px, 0))
+    
+    # Bottom-Left
+    bl_pixel = image.crop((0, h-1, 1, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(bl_pixel, (0, h + bleed_px))
+    
+    # Bottom-Right
+    br_pixel = image.crop((w-1, h-1, w, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(br_pixel, (w + bleed_px, h + bleed_px))
+    
+    return new_img
+
+# --- FILE UPLOADER ---
 uploaded_file = st.file_uploader("Upload File", type=["pdf", "png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
     
-    # 1. PRE-PROCESSING: Convert Image to PDF if needed
+    processed_images = []
+    
+    # Load input as Image list
     if uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
-        # Open the image
-        image = Image.open(uploaded_file)
-        
-        # Convert RGBA (transparent) to RGB so it saves as PDF
-        if image.mode == 'RGBA':
-            image = image.convert('RGB')
-            
-        # Save image as PDF into memory
-        pdf_stream = io.BytesIO()
-        image.save(pdf_stream, format="PDF", resolution=300)
-        pdf_stream.seek(0)
-        
-        # Load this new PDF into PyMuPDF
-        doc = fitz.open(stream=pdf_stream.read(), filetype="pdf")
-        st.info("Image converted to PDF. Now adding bleeds...")
+        img = Image.open(uploaded_file)
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
+        # We assume 300 DPI for uploaded images, or just use pixel size
+        processed_images.append(img)
         
     else:
-        # It's already a PDF, just load it
+        # It is a PDF -> Render pages to Images
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+        for page in doc:
+            # Render at 300 DPI (zoom=4.16 approx, since 72*4.16 ~= 300)
+            pix = page.get_pixmap(dpi=300)
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            processed_images.append(img)
 
-    # 2. BLEED GENERATION LOGIC
-    # Define bleed size: 0.0625 inches = 4.5 points
-    BLEED_PTS = 4.5 
+    # PROCESS BLEEDS
+    # 0.0625 inches at 300 DPI is approx 19 pixels
+    # (0.0625 * 300 = 18.75) -> Round to 19
+    BLEED_PX = 19
     
-    # Create a new empty PDF to hold the final stretched pages
-    new_doc = fitz.open()
+    final_pdf_images = []
     
-    for page in doc:
-        # Get original size
-        rect = page.rect
-        
-        # Calculate new size (Original + Bleed on all sides)
-        new_width = rect.width + (2 * BLEED_PTS)
-        new_height = rect.height + (2 * BLEED_PTS)
-        
-        # Create a new page in the new document with the larger size
-        new_page = new_doc.new_page(width=new_width, height=new_height)
-        
-        # Draw the original page onto the new page, STRETCHING it to fill the new box
-        # keep_proportion=False is the magic key to eliminate white strips!
-        new_page.show_pdf_page(new_page.rect, doc, page.number, keep_proportion=False)
+    with st.spinner("Generating Pixel-Stretched Bleeds..."):
+        for img in processed_images:
+            final_img = add_pixel_stretch_bleed(img, BLEED_PX)
+            final_pdf_images.append(final_img)
 
-    # 3. SAVE & DOWNLOAD
+    # SAVE TO PDF
     output_buffer = io.BytesIO()
-    new_doc.save(output_buffer)
-    new_doc.close()
+    if final_pdf_images:
+        final_pdf_images[0].save(
+            output_buffer, 
+            "PDF", 
+            resolution=300.0, 
+            save_all=True, 
+            append_images=final_pdf_images[1:]
+        )
     
-    st.success("Success! Bleeds added.")
+    st.success("Success! Pixel-Stretched Bleeds added.")
     
     st.download_button(
         label="Download Print-Ready PDF",
         data=output_buffer.getvalue(),
-        file_name=f"BLEED_{uploaded_file.name.rsplit('.', 1)[0]}.pdf",
+        file_name=f"BLEED_STRETCH_{uploaded_file.name.rsplit('.', 1)[0]}.pdf",
         mime="application/pdf"
     )
-
