@@ -48,8 +48,8 @@ if uploaded_file is not None:
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
 
     # 2. BLEED GENERATION LOGIC
-    # Define bleed size: 0.125 inches = 9 points
-    BLEED_PTS = 9 
+    # Define bleed size: 0.0625 inches = 4.5 points
+    BLEED_PTS = 4.5 
     
     # Create a new empty PDF to hold the final stretched pages
     new_doc = fitz.open()
@@ -82,3 +82,4 @@ if uploaded_file is not None:
         file_name=f"BLEED_{uploaded_file.name.rsplit('.', 1)[0]}.pdf",
         mime="application/pdf"
     )
+
