@@ -66,8 +66,8 @@ def add_bleed(page_pixmap):
     return new_img
 
 # --- APP INTERFACE ---
-st.title("Simple PDF Bleed Tool")
-st.write("Upload a PDF. Adds bleed by STRETCHING the edges.")
+st.title("Any Budget PDF Bleed Tool")
+st.write("Upload a PDF without bleeds. Adds bleed by STRETCHING the edges and download a NEW PDF with BLEEDS.")
 
 uploaded_file = st.file_uploader("Upload PDF", type="pdf")
 
@@ -96,4 +96,5 @@ if uploaded_file:
     # This code runs AFTER the spinner has disappeared
     if success:
         st.success("Done!")
+
         st.download_button("Download Print-Ready PDF", data=pdf_bytes.getvalue(), file_name="bleed_added_stretched.pdf", mime="application/pdf")
