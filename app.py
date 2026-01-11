@@ -66,6 +66,7 @@ def add_bleed(page_pixmap):
     return new_img
 
 # --- APP INTERFACE ---
+st.image("Any Budget Logo.png", width=300)
 st.title("Any Budget PDF Bleed Tool")
 st.write("""
 1. **Upload** a PDF file without bleeds.
@@ -102,6 +103,7 @@ if uploaded_file:
         st.success("Done!")
 
         st.download_button("Download Print-Ready PDF", data=pdf_bytes.getvalue(), file_name="bleed_added_stretched.pdf", mime="application/pdf")
+
 
 
 
