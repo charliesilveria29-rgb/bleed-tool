@@ -67,7 +67,11 @@ def add_bleed(page_pixmap):
 
 # --- APP INTERFACE ---
 st.title("Any Budget PDF Bleed Tool")
-st.write("1. Upload a PDF file without bleeds. 2. Any Budget Bleed Tool creates bleeds by STRETCHING the edges. 3. Download your NEW PDF file with the proper BLEEDS for printing.")
+st.write("""
+1. Upload a PDF file WITHOUT bleeds.
+2. Any Budget Bleed Tool creates bleeds by STRETCHING the edges.
+3. Download your NEW PDF file WITH the proper BLEEDS for printing.
+""")
 
 uploaded_file = st.file_uploader("Upload PDF", type="pdf")
 
@@ -98,5 +102,6 @@ if uploaded_file:
         st.success("Done!")
 
         st.download_button("Download Print-Ready PDF", data=pdf_bytes.getvalue(), file_name="bleed_added_stretched.pdf", mime="application/pdf")
+
 
 
