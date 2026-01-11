@@ -96,26 +96,26 @@ if uploaded_file is not None:
         img = Image.open(uploaded_file)
         if img.mode == 'RGBA':
             img = img.convert('RGB')
-        # We assume 300 DPI for uploaded images, or just use pixel size
+        # We assume 600 DPI for uploaded images
         processed_images.append(img)
         
     else:
         # It is a PDF -> Render pages to Images
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
         for page in doc:
-            # Render at 300 DPI (zoom=4.16 approx, since 72*4.16 ~= 300)
-            pix = page.get_pixmap(dpi=300)
+            # --- CHANGE 1: Render at 600 DPI (High Resolution) ---
+            pix = page.get_pixmap(dpi=600)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             processed_images.append(img)
 
     # PROCESS BLEEDS
-    # 0.0625 inches at 300 DPI is approx 19 pixels
-    # (0.0625 * 300 = 18.75) -> Round to 19
-    BLEED_PX = 19
+    # --- CHANGE 2: Update bleed pixels for 600 DPI ---
+    # 0.0625 inches * 600 DPI = 37.5 -> Round to 38
+    BLEED_PX = 38
     
     final_pdf_images = []
     
-    with st.spinner("Generating Pixel-Stretched Bleeds..."):
+    with st.spinner("Generating High-Res Pixel-Stretched Bleeds..."):
         for img in processed_images:
             final_img = add_pixel_stretch_bleed(img, BLEED_PX)
             final_pdf_images.append(final_img)
@@ -126,7 +126,7 @@ if uploaded_file is not None:
         final_pdf_images[0].save(
             output_buffer, 
             "PDF", 
-            resolution=300.0, 
+            resolution=600.0, # --- CHANGE 3: Save as 600 DPI ---
             save_all=True, 
             append_images=final_pdf_images[1:]
         )
@@ -139,4 +139,3 @@ if uploaded_file is not None:
         file_name=f"BLEED_STRETCH_{uploaded_file.name.rsplit('.', 1)[0]}.pdf",
         mime="application/pdf"
     )
-
