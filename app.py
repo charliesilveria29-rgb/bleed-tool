@@ -70,7 +70,7 @@ st.image("Any Budget Logo.png", width=300)
 st.title("Any Budget PDF Bleed Tool")
 st.write("""
 1. **Upload** a PDF file without bleeds.
-2. The tool **automatically creates** bleeds by stretching the edges.
+2. The tool **automatically creates** perfect bleeds.
 3. **Download** your new print-ready file.
 """)
 
@@ -103,6 +103,7 @@ if uploaded_file:
         st.success("Done!")
 
         st.download_button("Download Print-Ready PDF", data=pdf_bytes.getvalue(), file_name="bleed_added_stretched.pdf", mime="application/pdf")
+
 
 
 
