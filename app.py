@@ -136,7 +136,8 @@ if uploaded_file is not None:
     st.download_button(
         label="Download Print-Ready PDF",
         data=output_buffer.getvalue(),
-        file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}WITH_BLEEDS.pdf",
+        file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
+
 
