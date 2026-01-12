@@ -15,7 +15,7 @@ except:
 st.title("Any Budget PDF Bleed Creator")
 
 st.write("""
-1. **Upload** a file (PDF, PNG, or JPG).
+1. **Upload** a file (PDF, PNG, JPG, or TIF).
 2. **Automatically create** perfect bleeds.
 3. **Download** your new print-ready PDF.
 """)
@@ -72,16 +72,21 @@ def get_stretched_background(page, bleed_pts):
     return new_img
 
 # --- FILE UPLOADER ---
-uploaded_file = st.file_uploader("Upload File", type=["pdf", "png", "jpg", "jpeg"])
+# Added 'tif' and 'tiff' to the allowed types list
+uploaded_file = st.file_uploader("Upload File", type=["pdf", "png", "jpg", "jpeg", "tif", "tiff"])
 
 if uploaded_file is not None:
     
     # 1. PREPARE SOURCE DOCUMENT
     # If image, convert to PDF in memory first so we can treat everything as a PDF
-    if uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+    # Added .tif and .tiff to the check below
+    if uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
         img = Image.open(uploaded_file)
-        if img.mode == 'RGBA':
+        
+        # Convert RGBA (transparent) or CMYK (often used in TIF) to RGB so it saves as PDF
+        if img.mode in ('RGBA', 'CMYK'):
             img = img.convert('RGB')
+            
         pdf_stream = io.BytesIO()
         img.save(pdf_stream, format="PDF", resolution=300)
         pdf_stream.seek(0)
@@ -132,6 +137,3 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
-
-
-
