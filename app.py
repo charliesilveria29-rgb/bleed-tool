@@ -20,67 +20,54 @@ st.write("""
 3. **Download** your new print-ready PDF.
 """)
 
-def add_pixel_stretch_bleed(image, bleed_px):
+def get_stretched_background(page, bleed_pts):
     """
-    Takes a PIL image and adds a 'smeared' pixel bleed to all sides.
-    This preserves the center quality perfectly.
+    Generates a pixel-stretched image of the page to use as a background.
     """
-    w, h = image.size
+    # 1. Render page to image (DPI 150 is fine for the blurry edge effect)
+    pix = page.get_pixmap(dpi=150)
+    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    
+    # 2. Calculate pixel bleed amount based on the 150 DPI
+    # (bleed_pts / 72 inch) * 150 dpi
+    bleed_px = int((bleed_pts / 72) * 150)
+    
+    w, h = img.size
     new_w = w + 2 * bleed_px
     new_h = h + 2 * bleed_px
     
-    # Create new canvas
+    # 3. Create the stretched canvas
     new_img = Image.new("RGB", (new_w, new_h))
+    new_img.paste(img, (bleed_px, bleed_px))
     
-    # Paste original in the center
-    new_img.paste(image, (bleed_px, bleed_px))
+    # Stretch Top
+    top = img.crop((0, 0, w, 1)).resize((w, bleed_px), resample=Image.NEAREST)
+    new_img.paste(top, (bleed_px, 0))
     
-    # --- 1. STRETCH TOP EDGE ---
-    # Crop the top 1px row
-    top_row = image.crop((0, 0, w, 1))
-    # Resize it to fill the top bleed area
-    top_fill = top_row.resize((w, bleed_px), resample=Image.NEAREST)
-    new_img.paste(top_fill, (bleed_px, 0))
+    # Stretch Bottom
+    bot = img.crop((0, h-1, w, h)).resize((w, bleed_px), resample=Image.NEAREST)
+    new_img.paste(bot, (bleed_px, h + bleed_px))
     
-    # --- 2. STRETCH BOTTOM EDGE ---
-    # Crop the bottom 1px row
-    bottom_row = image.crop((0, h-1, w, h))
-    # Resize it to fill the bottom bleed area
-    bottom_fill = bottom_row.resize((w, bleed_px), resample=Image.NEAREST)
-    new_img.paste(bottom_fill, (bleed_px, h + bleed_px))
+    # Stretch Left
+    left = img.crop((0, 0, 1, h)).resize((bleed_px, h), resample=Image.NEAREST)
+    new_img.paste(left, (0, bleed_px))
     
-    # --- 3. STRETCH LEFT EDGE ---
-    # Crop the left 1px column
-    left_col = image.crop((0, 0, 1, h))
-    # Resize it to fill the left bleed area
-    left_fill = left_col.resize((bleed_px, h), resample=Image.NEAREST)
-    new_img.paste(left_fill, (0, bleed_px))
+    # Stretch Right
+    right = img.crop((w-1, 0, w, h)).resize((bleed_px, h), resample=Image.NEAREST)
+    new_img.paste(right, (w + bleed_px, bleed_px))
     
-    # --- 4. STRETCH RIGHT EDGE ---
-    # Crop the right 1px column
-    right_col = image.crop((w-1, 0, w, h))
-    # Resize it to fill the right bleed area
-    right_fill = right_col.resize((bleed_px, h), resample=Image.NEAREST)
-    new_img.paste(right_fill, (w + bleed_px, bleed_px))
+    # Corners
+    tl = img.crop((0, 0, 1, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(tl, (0, 0))
     
-    # --- 5. FILL CORNERS ---
-    # We take the corner pixels and stretch them into the empty corner blocks
+    tr = img.crop((w-1, 0, w, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(tr, (w + bleed_px, 0))
     
-    # Top-Left
-    tl_pixel = image.crop((0, 0, 1, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
-    new_img.paste(tl_pixel, (0, 0))
+    bl = img.crop((0, h-1, 1, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(bl, (0, h + bleed_px))
     
-    # Top-Right
-    tr_pixel = image.crop((w-1, 0, w, 1)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
-    new_img.paste(tr_pixel, (w + bleed_px, 0))
-    
-    # Bottom-Left
-    bl_pixel = image.crop((0, h-1, 1, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
-    new_img.paste(bl_pixel, (0, h + bleed_px))
-    
-    # Bottom-Right
-    br_pixel = image.crop((w-1, h-1, w, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
-    new_img.paste(br_pixel, (w + bleed_px, h + bleed_px))
+    br = img.crop((w-1, h-1, w, h)).resize((bleed_px, bleed_px), resample=Image.NEAREST)
+    new_img.paste(br, (w + bleed_px, h + bleed_px))
     
     return new_img
 
@@ -89,49 +76,55 @@ uploaded_file = st.file_uploader("Upload File", type=["pdf", "png", "jpg", "jpeg
 
 if uploaded_file is not None:
     
-    processed_images = []
-    
-    # Load input as Image list
+    # 1. PREPARE SOURCE DOCUMENT
+    # If image, convert to PDF in memory first so we can treat everything as a PDF
     if uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
         img = Image.open(uploaded_file)
         if img.mode == 'RGBA':
             img = img.convert('RGB')
-        # We assume 600 DPI for uploaded images
-        processed_images.append(img)
-        
+        pdf_stream = io.BytesIO()
+        img.save(pdf_stream, format="PDF", resolution=300)
+        pdf_stream.seek(0)
+        doc = fitz.open(stream=pdf_stream.read(), filetype="pdf")
     else:
-        # It is a PDF -> Render pages to Images
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+
+    # 2. CREATE NEW PDF WITH BLEEDS
+    # 0.0625 inches = 4.5 points
+    BLEED_PTS = 4.5
+    
+    new_doc = fitz.open()
+    
+    with st.spinner("Generating Hybrid Vector Bleeds..."):
         for page in doc:
-            # --- CHANGE 1: Render at 600 DPI (High Resolution) ---
-            pix = page.get_pixmap(dpi=600)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            processed_images.append(img)
+            original_rect = page.rect
+            width = original_rect.width
+            height = original_rect.height
+            
+            # Create new page with bleed dimensions
+            new_page = new_doc.new_page(width = width + (2 * BLEED_PTS),
+                                        height = height + (2 * BLEED_PTS))
+            
+            # STEP A: Draw the "Stretched" Background Image
+            # We generate the smeared image and insert it to fill the WHOLE new page
+            bg_img = get_stretched_background(page, BLEED_PTS)
+            with io.BytesIO() as f:
+                bg_img.save(f, format="JPEG", quality=95)
+                new_page.insert_image(new_page.rect, stream=f.getvalue())
+            
+            # STEP B: Overlay the ORIGINAL Vector Page in the center
+            # This keeps text 100% sharp because we are pasting the vector PDF, not an image
+            target_rect = fitz.Rect(BLEED_PTS, BLEED_PTS, 
+                                    width + BLEED_PTS, height + BLEED_PTS)
+            
+            new_page.show_pdf_page(target_rect, doc, page.number)
 
-    # PROCESS BLEEDS
-    # --- CHANGE 2: Update bleed pixels for 600 DPI ---
-    # 0.0625 inches * 600 DPI = 37.5 -> Round to 38
-    BLEED_PX = 38
-    
-    final_pdf_images = []
-    
-    with st.spinner("Generating High-Res Pixel-Stretched Bleeds..."):
-        for img in processed_images:
-            final_img = add_pixel_stretch_bleed(img, BLEED_PX)
-            final_pdf_images.append(final_img)
-
-    # SAVE TO PDF
+    # 3. SAVE & DOWNLOAD
     output_buffer = io.BytesIO()
-    if final_pdf_images:
-        final_pdf_images[0].save(
-            output_buffer, 
-            "PDF", 
-            resolution=600.0, # --- CHANGE 3: Save as 600 DPI ---
-            save_all=True, 
-            append_images=final_pdf_images[1:]
-        )
+    new_doc.save(output_buffer)
+    new_doc.close()
     
-    st.success("Success! Download PDF with Bleeds.")
+    st.success("Success! High-Quality Bleeds Added.")
     
     st.download_button(
         label="Download Print-Ready PDF",
@@ -139,5 +132,3 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
-
-
