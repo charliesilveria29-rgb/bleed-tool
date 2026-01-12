@@ -12,7 +12,7 @@ try:
 except:
     st.warning("Logo not found. Make sure 'Any Budget Logo.png' is in your GitHub folder.")
 
-st.title("Any Budget PDF Bleed Creator")
+st.title("Any Budget Bleed Creator")
 
 st.write("""
 1. **Upload** a file (PDF, PNG, JPG, or TIF).
@@ -138,4 +138,5 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
+
 
