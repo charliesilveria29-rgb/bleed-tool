@@ -4,7 +4,7 @@ from PIL import Image
 import io
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="Any Budget Bleed Creator", layout="centered")
+st.set_page_config(page_title="Any Budget Bleed Tool", layout="centered")
 
 # --- APP INTERFACE ---
 try:
@@ -12,11 +12,11 @@ try:
 except:
     st.warning("Logo not found. Make sure 'Any Budget Logo.png' is in your GitHub folder.")
 
-st.title("Any Budget PDF Bleed Tool")
+st.title("Any Budget PDF Bleed Creator")
 
 st.write("""
 1. **Upload** a file (PDF, PNG, or JPG).
-2. The tool **automatically creates** perfect bleeds.
+2. **Automatically create** perfect bleeds.
 3. **Download** your new print-ready PDF.
 """)
 
@@ -132,5 +132,6 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
+
 
 
