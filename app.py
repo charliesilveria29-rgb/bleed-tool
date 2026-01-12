@@ -4,7 +4,7 @@ from PIL import Image
 import io
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="Any Budget Bleed Tool", layout="centered")
+st.set_page_config(page_title="Any Budget Bleed Creator", layout="centered")
 
 # --- APP INTERFACE ---
 try:
@@ -132,4 +132,5 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
+
 
