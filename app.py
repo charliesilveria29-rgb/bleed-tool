@@ -124,7 +124,7 @@ if uploaded_file is not None:
     new_doc.save(output_buffer)
     new_doc.close()
     
-    st.success("Success! High-Quality Bleeds Added.")
+    st.success("Success!")
     
     st.download_button(
         label="Download Print-Ready PDF",
@@ -132,3 +132,4 @@ if uploaded_file is not None:
         file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_WITH_BLEEDS.pdf",
         mime="application/pdf"
     )
+
