@@ -6,6 +6,26 @@ import io
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Any Budget Bleed Tool", layout="centered")
 
+# --- CUSTOM BACKGROUND ---
+def add_bg_from_url():
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+             background-attachment: fixed;
+             background-size: cover;
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
+add_bg_from_url()
+# -------------------------
+
+# --- APP INTERFACE ---
+
 # --- APP INTERFACE ---
 try:
     st.image("Any Budget Logo.png", width=300)
