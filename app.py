@@ -74,7 +74,7 @@ def get_stretched_background(page, bleed_pts):
 
 # --- FILE UPLOADER ---
 # Added 'tif' and 'tiff' to the allowed types list
-uploaded_file = st.file_uploader("Drag and drop your file here, or click 'Upload' to browse.", type=["pdf", "png", "jpg", "jpeg", "tif", "tiff"])
+uploaded_file = st.file_uploader("Drag and drop your file below, or click 'Upload' to browse.", type=["pdf", "png", "jpg", "jpeg", "tif", "tiff"])
 
 if uploaded_file is not None:
     
