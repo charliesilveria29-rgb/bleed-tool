@@ -12,9 +12,7 @@ def add_bg_from_url():
          f"""
          <style>
          .stApp {{
-             background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
-             background-attachment: fixed;
-             background-size: cover;
+             background-color: #f4f6f9; /* Soft light gray */
          }}
          </style>
          """,
@@ -23,8 +21,6 @@ def add_bg_from_url():
 
 add_bg_from_url()
 # -------------------------
-
-# --- APP INTERFACE ---
 
 # --- APP INTERFACE ---
 try:
