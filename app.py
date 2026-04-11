@@ -12,7 +12,10 @@ def add_bg_from_url():
          f"""
          <style>
          .stApp {{
-             background-color: #f4f6f9; /* Soft light gray */
+             background-image: url("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2500");
+             background-attachment: fixed;
+             background-size: cover;
+             background-position: center;
          }}
          </style>
          """,
