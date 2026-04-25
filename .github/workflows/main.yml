@@ -2,12 +2,15 @@ name: Keep App Awake
 
 on:
   schedule:
-    - cron: '0 0,12 * * *' # Runs every 12 hours (Midnight and Noon)
-  workflow_dispatch: # Allows you to run it manually to test
+    - cron: '0 0,12 * * *' # Runs every 12 hours
+  workflow_dispatch: # Allows you to run it manually
 
 jobs:
   nudge:
     runs-on: ubuntu-latest
+    # THIS BLOCK BELOW IS THE FIX FOR ERROR 128
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
