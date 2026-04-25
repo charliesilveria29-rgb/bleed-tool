@@ -1,0 +1,22 @@
+name: Keep App Awake
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *' # Runs every 12 hours (Midnight and Noon)
+  workflow_dispatch: # Allows you to run it manually to test
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Make a tiny change
+        run: |
+          echo "Last nudge: $(date)" > nudge.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add nudge.txt
+          git commit -m "Keep-alive nudge"
+          git push
